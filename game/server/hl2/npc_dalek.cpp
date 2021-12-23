@@ -1,6 +1,6 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// Purpose: Dalek - now much friendlier!
+// Purpose: Dustbin wearing a skirt covered in disco balls.
 //
 //=============================================================================
 
