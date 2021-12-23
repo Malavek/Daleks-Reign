@@ -1,6 +1,6 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// Purpose: Dustbin wearing a skirt covered in disco balls.
+// Purpose: A dustbin wearing a skirt covered in disco balls.
 //
 //=============================================================================
 
