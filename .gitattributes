@@ -1,0 +1,5 @@
+game/server/Debug_mod_episodic/server.pdb filter=lfs diff=lfs merge=lfs -text
+lib/public/vgui_controls.lib filter=lfs diff=lfs merge=lfs -text
+game/server/Debug_mod_hl2/server.pdb filter=lfs diff=lfs merge=lfs -text
+everything.sdf filter=lfs diff=lfs merge=lfs -text
+games.sdf filter=lfs diff=lfs merge=lfs -text
