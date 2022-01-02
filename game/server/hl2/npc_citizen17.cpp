@@ -15,6 +15,7 @@
 #include "weapon_rpg.h"
 #include "hl2_player.h"
 #include "items.h"
+#include "gib.h"
 
 
 #ifdef HL2MP
@@ -394,6 +395,7 @@ void CNPC_Citizen::Precache()
 		PrecacheModel( "models/props_canal/mattpipe.mdl" );
 
 	PrecacheModel( INSIGNIA_MODEL );
+	PrecacheModel("models/skeleton/skeleton_whole.mdl");
 
 	PrecacheScriptSound( "NPC_Citizen.FootstepLeft" );
 	PrecacheScriptSound( "NPC_Citizen.FootstepRight" );
@@ -2290,6 +2292,23 @@ int CNPC_Citizen::OnTakeDamage_Alive( const CTakeDamageInfo &info )
 			}
 		}
 	}
+
+	//turn into skeleboner -Malavek
+
+	/*Vector vecSkeletonForce;
+	vecSkeletonForce.x = random->RandomFloat(-400, 400);
+	vecSkeletonForce.y = random->RandomFloat(-400, 400);
+	vecSkeletonForce.z = random->RandomFloat(50, 300);
+
+	if ((info.GetAttacker()->Classify() == CLASS_DALEK) && (info.GetDamage() >= m_iHealth) && (info.GetDamageType() & DMG_SHOCK))
+	{
+		m_lifeState = LIFE_DEAD;
+		newInfo.SetDamage(m_iHealth);
+		newInfo.SetDamageType(info.GetDamageType() | DMG_REMOVENORAGDOLL);
+		
+
+		CBaseEntity *pGib = CreateRagGib("models/skeleton/skeleton_whole.mdl", GetLocalOrigin(), GetLocalAngles(), vecSkeletonForce);
+	}*/
 
 	return BaseClass::OnTakeDamage_Alive( newInfo );
 }

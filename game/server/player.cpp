@@ -6792,7 +6792,7 @@ void CBasePlayer::UpdateClientData( void )
 			MessageEnd();
 		}
 	}
-
+	/*
 #if 0 // BYE BYE!!
 	// Update Flashlight
 	if ((m_flFlashLightTime) && (m_flFlashLightTime <= gpGlobals->curtime))
@@ -6820,7 +6820,7 @@ void CBasePlayer::UpdateClientData( void )
 		}
 	}
 #endif 
-
+	*/
 	CheckTrainUpdate();
 
 	// Update all the items

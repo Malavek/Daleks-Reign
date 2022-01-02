@@ -128,6 +128,7 @@ int ACT_DALEK_MELEE;
 int ACT_DALEK_DISPEL;
 //int ACT_DALEK_HEAL; // Heal gesture
 //int ACT_DALEK_ANTLION_THROW;
+int ACT_DALEK_TURN180;
 
 //=========================================================
 // Monster's Anim Events Go Here
@@ -271,6 +272,7 @@ CNPC_Dalek::CNPC_Dalek(void) :
 m_flAimDelay(0.0f)
 //m_eHealState(HEAL_STATE_NONE)
 {
+	m_bDamageEnoughToExplode = false;
 }
 
 //-----------------------------------------------------------------------------
@@ -331,6 +333,12 @@ void CNPC_Dalek::StartTask(const Task_t *pTask)
 		}
 
 		BaseClass::StartTask(pTask);
+		break;
+	}
+
+	case TASK_DALEK_TURN180:
+	{
+		SetActivity((Activity)ACT_DALEK_TURN180);
 		break;
 	}
 
@@ -502,6 +510,15 @@ void CNPC_Dalek::RunTask(const Task_t *pTask)
 		break;
 	}
 
+	case TASK_DALEK_TURN180:
+	{
+		if (IsActivityFinished())
+		{
+			TaskComplete();
+		}
+		break;
+	}
+
 	/*case TASK_DALEK_EXTRACT_WARMUP:
 	{
 		if (IsActivityFinished())
@@ -606,7 +623,7 @@ void CNPC_Dalek::Explode(void)
 
 //-----------------------------------------------------------------------------
 // Purpose: For combine melee attack (kick/hit)
-// Input  :
+// Input  : beep beep lettuce
 // Output :
 //-----------------------------------------------------------------------------
 int CNPC_Dalek::MeleeAttack1Conditions(float flDot, float flDist)
@@ -744,7 +761,7 @@ Vector CNPC_Dalek::BodyTarget(const Vector &posSrc, bool bNoisy)
 //-----------------------------------------------------------------------------
 // Purpose: Try a more predictive approach
 //-----------------------------------------------------------------------------
-/*bool CNPC_Dalek::InnateWeaponLOSCondition(const Vector &ownerPos, const Vector &targetPos, bool bSetConditions)
+bool CNPC_Dalek::InnateWeaponLOSCondition(const Vector &ownerPos, const Vector &targetPos, bool bSetConditions)
 {
 	// Try and figure out a rough idea of where we'll be after a certain time delta and base our
 	// conditions on that instead.  This is necessary because the dalek takes a long time to
@@ -761,15 +778,15 @@ Vector CNPC_Dalek::BodyTarget(const Vector &posSrc, bool bNoisy)
 	Vector vecFinalTargetPos = GetEnemy()->BodyTarget(vecNewOwnerPos) + vecDelta;
 
 	// Debug data
-	
+	/*
 	NDebugOverlay::Box( GetEnemy()->BodyTarget( vecNewOwnerPos ), -Vector(4,4,4), Vector(4,4,4), 255, 0, 0, 0, 3.0f );
 	NDebugOverlay::Box( vecFinalTargetPos, -Vector(4,4,4), Vector(4,4,4), 255, 255, 0, 0, 3.0f );
 	NDebugOverlay::HorzArrow( GetEnemy()->BodyTarget( vecNewOwnerPos ), vecFinalTargetPos, 12.0f, 255, 0, 0, 16.0f, true, 3.0f );
 	NDebugOverlay::HorzArrow( vecNewOwnerPos, GetEnemy()->BodyTarget( vecNewOwnerPos ), 8.0f, 255, 255, 0, 32.0f, true, 3.0f );
-	
+	*/
 
 	return BaseClass::InnateWeaponLOSCondition(vecNewOwnerPos, vecFinalTargetPos, bSetConditions);
-}*/
+}
 
 //------------------------------------------------------------------------------
 // Purpose : For innate range attack
@@ -786,18 +803,33 @@ int CNPC_Dalek::RangeAttack1Conditions(float flDot, float flDist)
 	if (IsCurSchedule(SCHED_SCENE_GENERIC))
 		return COND_NONE;
 
+	// Make sure not trying to shoot a wall 
+	// added by Malavek
+	trace_t tr;
+	Vector vecSrc, vecEnd;
+
+	//vecSrc = WorldSpaceCenter();
+	GetAttachment("attach_barrel", vecSrc);
+	vecEnd = GetEnemy()->WorldSpaceCenter();
+
+	AI_TraceLine(vecSrc, vecEnd, MASK_SHOT, this, COLLISION_GROUP_NONE, &tr);
+	if (tr.m_pEnt != GetEnemy())
+	{
+		return COND_NONE;
+	}
+
 	// dvs: Allow up-close range attacks for episodic as the vort's melee
 	// attack is rather ineffective.
-#ifndef HL2_EPISODIC
+/*#ifndef HL2_EPISODIC
 	if (flDist <= 70)
 	{
 		return(COND_TOO_CLOSE_TO_ATTACK);
 	}
 	else
-#else
-	if (flDist < 32.0f)
+#else*/
+	if (flDist < 64.0f) //was 32 -malavek
 		return COND_TOO_CLOSE_TO_ATTACK;
-#endif // HL2_EPISODIC
+//#endif // HL2_EPISODIC
 	if (flDist > InnateRange1MaxRange())
 	{
 		return(COND_TOO_FAR_TO_ATTACK);
@@ -992,8 +1024,8 @@ void CNPC_Dalek::HandleAnimEvent(animevent_t *pEvent)
 		return;
 	}*/
 
-	if (pEvent->event == AE_DALEK_ZAP_POWERUP)
-	{
+	//if (pEvent->event == AE_DALEK_ZAP_POWERUP)
+	//{
 		/*if (m_fGlowChangeTime > gpGlobals->curtime)
 			return;
 
@@ -1031,7 +1063,7 @@ void CNPC_Dalek::HandleAnimEvent(animevent_t *pEvent)
 			m_fGlowAge = 1;
 		}*/
 
-		EmitSound("npc_dalek.guncharge");
+		//EmitSound("npc_dalek.guncharge");
 
 		/*CPASAttenuationFilter filter(this);
 
@@ -1047,7 +1079,7 @@ void CNPC_Dalek::HandleAnimEvent(animevent_t *pEvent)
 			m_bStopLoopingSounds = true;
 		}
 		return;*/
-	}
+	//}
 
 	if (pEvent->event == AE_DALEK_ZAP_SHOOT)
 	{
@@ -1078,7 +1110,7 @@ void CNPC_Dalek::HandleAnimEvent(animevent_t *pEvent)
 		ApplyMultiDamage();
 
 		// Suppress our aiming until we're done with the animation
-		m_flAimDelay = gpGlobals->curtime + 0.75f;
+		//m_flAimDelay = gpGlobals->curtime + 0.75f;
 
 		/*if (m_bExtractingBugbait)
 		{
@@ -1175,11 +1207,11 @@ void CNPC_Dalek::HandleAnimEvent(animevent_t *pEvent)
 		return;
 	}*/
 
-	if (pEvent->event == AE_DALEK_SWING_SOUND)
+	/*if (pEvent->event == AE_DALEK_SWING_SOUND)
 	{
 		EmitSound("NPC_Vortigaunt.Swing");
 		return;
-	}
+	}*/
 
 	if (pEvent->event == AE_DALEK_SHOOT_SOUNDSTART)
 	{
@@ -1200,11 +1232,11 @@ void CNPC_Dalek::HandleAnimEvent(animevent_t *pEvent)
 		return;
 	}
 
-	if (pEvent->event == AE_NPC_LEFTFOOT)
+	/*if (pEvent->event == AE_NPC_LEFTFOOT)
 	{
 		EmitSound("npc_dalek.move", pEvent->eventtime);
 		return;
-	}
+	}*/
 	
 	if (pEvent->event == AE_NPC_RIGHTFOOT)
 	{
@@ -1293,6 +1325,11 @@ Activity CNPC_Dalek::NPC_TranslateActivity(Activity eNewActivity)
 		if (GetReadinessLevel() >= AIRL_STIMULATED)
 			return ACT_IDLE_STIMULATED;
 	}
+
+	if ((eNewActivity == ACT_180_LEFT) || (eNewActivity == ACT_180_RIGHT))
+	{
+		SetSchedule(SCHED_DALEK_TURN180);
+	}
 	
 
 	if (eNewActivity == ACT_MELEE_ATTACK1)
@@ -1315,6 +1352,12 @@ void CNPC_Dalek::OnChangeActivity(Activity eNewActivity)
 	else
 	{
 		StopSound("npc_dalek.move");
+	}
+
+	if (eNewActivity == ACT_FLINCH_HEAD)
+	{
+		SetSchedule(SCHED_DALEK_STAND);
+		m_flAimDelay = gpGlobals->curtime + 0.75f;
 	}
 }
 
@@ -1467,8 +1510,11 @@ bool CNPC_Dalek::ShouldExplodeFromDamage(const CTakeDamageInfo &info)
 	if (pInflictor == NULL)
 		return false;
 
+	if (m_bDamageEnoughToExplode == true)
+		return true;
+
 	// Combine balls make us explode
-	if (UTIL_IsCombineBall(info.GetInflictor()))
+	/*if (UTIL_IsCombineBall(info.GetInflictor()))
 		return true;
 
 	// Stickybombs make us explode
@@ -1478,7 +1524,7 @@ bool CNPC_Dalek::ShouldExplodeFromDamage(const CTakeDamageInfo &info)
 		return true;
 
 	if (pInflictor == this && pAttacker == this)
-		return true;
+		return true;*/
 
 	return false;
 }
@@ -1736,7 +1782,7 @@ void CNPC_Dalek::TraceAttack(const CTakeDamageInfo &inputInfo, const Vector &vec
 		info.SetDamage(0.001);
 	}*/
 
-	switch (ptr->hitgroup)
+	/*switch (ptr->hitgroup)
 	{
 	case HITGROUP_CHEST:
 	case HITGROUP_STOMACH:
@@ -1757,7 +1803,7 @@ void CNPC_Dalek::TraceAttack(const CTakeDamageInfo &inputInfo, const Vector &vec
 		}
 		ptr->hitgroup = HITGROUP_CHEST;
 		break;
-	}
+	}*/
 
 	BaseClass::TraceAttack(info, vecDir, ptr, pAccumulator);
 }
@@ -1774,9 +1820,8 @@ Activity CNPC_Dalek::GetFlinchActivity(bool bHeavyDamage, bool bGesture)
 		if (SelectWeightedSequence(ACT_FLINCH_HEAD) != ACTIVITY_NOT_AVAILABLE)
 			return flinchActivity;
 	}
-//}
 
-	//return BaseClass::GetFlinchActivity(bHeavyDamage, bGesture);
+	return BaseClass::GetFlinchActivity(bHeavyDamage, bGesture);
 }
 
 //-----------------------------------------------------------------------------
@@ -1828,6 +1873,55 @@ int CNPC_Dalek::TranslateSchedule(int scheduleType)
 
 		break;
 		*/
+	case SCHED_FAIL_ESTABLISH_LINE_OF_FIRE:
+	{
+		/*if (!IsCrouching())
+		{
+			if (GetEnemy() && CouldShootIfCrouching(GetEnemy()))
+			{
+				Crouch();
+				return SCHED_COMBAT_FACE;
+			}
+		}*/
+
+		if (HasCondition(COND_SEE_ENEMY))
+		{
+			return TranslateSchedule(SCHED_TAKE_COVER_FROM_ENEMY);
+		}
+		else if (!m_AssaultBehavior.HasAssaultCue())
+		{
+			// Don't patrol if I'm in the middle of an assault, because 
+			// I'll never return to the assault. 
+			if (GetEnemy())
+			{
+				RememberUnreachable(GetEnemy());
+			}
+
+			return TranslateSchedule(SCHED_DALEK_PATROL);
+		}
+	}
+	break;
+	case SCHED_DALEK_ASSAULT:
+	{
+		CBaseEntity *pEntity = GetEnemy();
+
+		// FIXME: this should be generalized by the schedules that are selected, or in the definition of 
+		// what "cover" means (i.e., trace attack vulnerability vs. physical attack vulnerability
+		if (pEntity && pEntity->MyNPCPointer())
+		{
+			if (!(pEntity->MyNPCPointer()->CapabilitiesGet() & bits_CAP_WEAPON_RANGE_ATTACK1))
+			{
+				return TranslateSchedule(SCHED_ESTABLISH_LINE_OF_FIRE);
+			}
+		}
+		// don't charge forward if there's a hint group
+		if (GetHintGroup() != NULL_STRING)
+		{
+			return TranslateSchedule(SCHED_ESTABLISH_LINE_OF_FIRE);
+		}
+		return SCHED_DALEK_ASSAULT;
+	}
+
 
 	case SCHED_ESTABLISH_LINE_OF_FIRE:
 	{
@@ -2074,6 +2168,11 @@ int CNPC_Dalek::SelectCombatSchedule()
 		return SCHED_DALEK_ASSAULT;
 	}
 
+	if (HasCondition(COND_TOO_CLOSE_TO_ATTACK))
+	{
+		return SCHED_BACK_AWAY_FROM_ENEMY;
+	}
+
 	return SCHED_NONE;
 }
 
@@ -2106,6 +2205,25 @@ bool CNPC_Dalek::IsUsingTacticalVariant(int variant)
 	}
 
 	return m_iTacticalVariant == variant;
+}
+
+//-----------------------------------------------------------------------------
+// For the purpose of determining whether to use a pathfinding variant, this
+// function determines whether the current schedule is a schedule that 
+// 'approaches' the enemy. 
+//-----------------------------------------------------------------------------
+bool CNPC_Dalek::IsRunningApproachEnemySchedule()
+{
+	if (IsCurSchedule(SCHED_CHASE_ENEMY))
+		return true;
+
+	if (IsCurSchedule(SCHED_ESTABLISH_LINE_OF_FIRE))
+		return true;
+
+	if (IsCurSchedule(SCHED_DALEK_PRESS_ATTACK, false))
+		return true;
+
+	return false;
 }
 
 //-----------------------------------------------------------------------------
@@ -2196,7 +2314,7 @@ int CNPC_Dalek::SelectFailSchedule(int failedSchedule, int failedTask, AI_TaskFa
 	{
 		if (GetEnemy() && GetSenses()->CanSeeEntity(GetEnemy()))
 		{
-			return SCHED_RANGE_ATTACK1;
+			return SCHED_MELEE_ATTACK1; //was SCHED_RANGE_ATTACK1 -malavek
 		}
 	}
 
@@ -2421,16 +2539,16 @@ void CNPC_Dalek::OnRestore(void)
 //-----------------------------------------------------------------------------
 // Purpose: Do various non-schedule specific maintainence
 //-----------------------------------------------------------------------------
-/*void CNPC_Dalek::PrescheduleThink(void)
+void CNPC_Dalek::PrescheduleThink(void)
 {
 	// Speak any queued sentences
-	//m_Sentences.UpdateSentenceQueue();
+	m_Sentences.UpdateSentenceQueue();
 	// Update our healing (if active)
-	MaintainHealSchedule();
+	//MaintainHealSchedule();
 
 	// Let the base class have a go
 	BaseClass::PrescheduleThink();
-}*/
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -2653,7 +2771,7 @@ bool CNPC_Dalek::IsValidEnemy(CBaseEntity *pEnemy)
 
 //-----------------------------------------------------------------------------
 // Purpose: Heavy damage directly forward
-// Input  : nHand - Handedness of the beam
+// Input  : 
 //-----------------------------------------------------------------------------
 void CNPC_Dalek::ZapBeam(int nHand)
 {
@@ -3257,7 +3375,9 @@ bool CNPC_Dalek::CanRunAScriptedNPCInteraction(bool bForced /*= false*/)
 //-----------------------------------------------------------------------------
 int CNPC_Dalek::OnTakeDamage_Alive(const CTakeDamageInfo &info)
 {
-	if (info.GetDamageType() & (DMG_CRUSH | DMG_BULLET | DMG_SLASH | DMG_BURN | DMG_CLUB | DMG_BUCKSHOT | DMG_SLOWBURN | DMG_RADIATION | DMG_POISON | DMG_ACID | DMG_DROWN | DMG_GENERIC | DMG_PREVENT_PHYSICS_FORCE))
+	CTakeDamageInfo subInfo = info;
+
+	if (!(info.GetDamageType() & (DMG_BLAST | DMG_SHOCK)))
 		return 0;
 
 	if (info.GetDamageType() == DMG_GENERIC)
@@ -3278,13 +3398,19 @@ int CNPC_Dalek::OnTakeDamage_Alive(const CTakeDamageInfo &info)
 		Vector headPos = BodyTarget(info.GetDamagePosition(), false);
 
 		float dist = CalcDistanceToAABB(WorldAlignMins(), WorldAlignMaxs(), info.GetDamagePosition() - headPos);
+
+		if (!IsSmoking() && m_iHealth <= sk_dalek_health.GetFloat() / 2)
+		{
+			StartSmoking();
+		}
+
 		// close enough to do damage?
 		if (dist < 200)
 		{
 			bool bPlayer = info.GetAttacker()->IsPlayer();
 			if (bPlayer)
 			{
-				m_PlayerFreePass.Revoke();
+				//m_PlayerFreePass.Revoke();
 				AddFacingTarget(info.GetAttacker(), info.GetAttacker()->GetAbsOrigin(), 1.0, 2.0);
 
 				UpdateEnemyMemory(info.GetAttacker(), info.GetAttacker()->GetAbsOrigin());
@@ -3293,38 +3419,25 @@ int CNPC_Dalek::OnTakeDamage_Alive(const CTakeDamageInfo &info)
 				AddFacingTarget(info.GetAttacker(), info.GetAttacker()->GetAbsOrigin(), 0.5, 2.0);
 
 			PainSound(info);
-
-			if (!IsSmoking() && m_iHealth <= sk_dalek_health.GetFloat() / 2)
-			{
-				StartSmoking();
-			}
 		}
 
 	}
 
-	// vital daleks (eg the vortigoth in ep2) take less damage from explosions
-	// so that zombines don't blow them up disappointingly. They take less damage
-	// still from antlion workers.
-	/*if (Classify() == CLASS_PLAYER_ALLY_VITAL)
+	//npcs always explode daleks on kill, players only explode them if the last hit is above a certain damage threshold 
+	//TO-DO: currently it only ragdolls if the weapon itself does damage under 20, and doesn't matter if the last hit is under 20 damage if the weapon can do more. -Malavek
+
+	if ((info.GetAttacker()->Classify() != CLASS_PLAYER) && (info.GetDamage() >= GetHealth()))
 	{
-		// half damage
-		CTakeDamageInfo subInfo = info;
-
-		// take less damage from antlion worker acid/poison
-		if (info.GetAttacker()->Classify() == CLASS_ANTLION &&
-			(info.GetDamageType() & (DMG_ACID | DMG_POISON)) != 0
-			)
-		{
-			subInfo.ScaleDamage(sk_dalek_vital_antlion_worker_dmg.GetFloat());
-		}
-
-		else if (info.GetDamageType() & DMG_BLAST)
-		{
-			subInfo.ScaleDamage(0.5f);
-		}
-
-		return BaseClass::OnTakeDamage_Alive(subInfo);
-	}*/
+		m_bDamageEnoughToExplode = true;
+	}
+	else if ((info.GetAttacker()->Classify() == CLASS_PLAYER) && (info.GetDamage() >= GetHealth()) && (info.GetDamage() > 20))
+	{
+		m_bDamageEnoughToExplode = true;
+	}
+	else
+	{
+		m_bDamageEnoughToExplode = false;
+	}
 
 	return BaseClass::OnTakeDamage_Alive(info);
 }
@@ -3433,8 +3546,8 @@ void CNPC_Dalek::OnStartScene(void)
 bool CNPC_Dalek::IsInterruptable(void)
 {
 	// Don't interrupt my attack schedule!
-	if (InAttackSequence())
-		return false;
+	//if (InAttackSequence())
+	//	return false;
 
 	return BaseClass::IsInterruptable();
 }
@@ -3510,6 +3623,7 @@ DECLARE_TASK(TASK_DALEK_EXTRACT_COOLDOWN)
 DECLARE_TASK(TASK_DALEK_GET_HEAL_TARGET)
 //DECLARE_TASK(TASK_DALEK_MELEE)
 DECLARE_TASK(TASK_DALEK_MOVESOUND)
+DECLARE_TASK(TASK_DALEK_TURN180)
 
 DECLARE_ACTIVITY(ACT_DALEK_AIM)
 //DECLARE_ACTIVITY(ACT_DALEK_START_HEAL)
@@ -3521,6 +3635,7 @@ DECLARE_ACTIVITY(ACT_DALEK_MELEE)
 //DECLARE_ACTIVITY(ACT_DALEK_HEAL)
 DECLARE_ACTIVITY(ACT_DALEK_DISPEL)
 //DECLARE_ACTIVITY(ACT_DALEK_ANTLION_THROW)
+DECLARE_ACTIVITY(ACT_DALEK_TURN180)
 
 DECLARE_CONDITION(COND_DALEK_CAN_HEAL)
 DECLARE_CONDITION(COND_DALEK_HEAL_TARGET_TOO_FAR)
@@ -3562,7 +3677,7 @@ DEFINE_SCHEDULE
 SCHED_DALEK_RANGE_ATTACK,
 
 "	Tasks"
-"		TASK_STOP_MOVING				0"
+//"		TASK_STOP_MOVING				0"
 "		TASK_FACE_IDEAL					0"
 "		TASK_ANNOUNCE_ATTACK			0"
 //"		TASK_SPEAK_SENTENCE				6900"	//EXTERMINATE!
@@ -3574,6 +3689,22 @@ SCHED_DALEK_RANGE_ATTACK,
 "		COND_NO_CUSTOM_INTERRUPTS"
 );
 
+//=========================================================
+// > SCHED_DALEK_TURN180
+//=========================================================
+DEFINE_SCHEDULE
+(
+SCHED_DALEK_TURN180,
+
+"	Tasks"
+"		TASK_SET_IDEAL_YAW_TO_CURRENT	0"
+"		TASK_STOP_MOVING				0"
+"		TASK_PLAY_SEQUENCE				ACTIVITY:ACT_DALEK_TURN180"
+"		TASK_WAIT						0.5"
+""
+"	Interrupts"
+"		COND_NO_CUSTOM_INTERRUPTS"
+);
 
 //=========================================================
 // > SCHED_DALEK_HEAL
@@ -3725,7 +3856,36 @@ SCHED_DALEK_ALERT_FACE_BESTSOUND,
 "		COND_HEAR_DANGER"
 )
 //=========================================================
-// SCHED_COMBINE_ASSAULT
+// SCHED_DALEK_ASSAULT
+//=========================================================
+DEFINE_SCHEDULE
+(
+SCHED_DALEK_PATROL,
+
+"	Tasks"
+"		TASK_STOP_MOVING				0"
+"		TASK_WANDER						900540"
+"		TASK_WALK_PATH					0"
+"		TASK_WAIT_FOR_MOVEMENT			0"
+"		TASK_STOP_MOVING				0"
+"		TASK_FACE_REASONABLE			0"
+"		TASK_WAIT						3"
+"		TASK_WAIT_RANDOM				3"
+"		TASK_SET_SCHEDULE				SCHEDULE:SCHED_DALEK_PATROL" // keep doing it
+""
+"	Interrupts"
+"		COND_ENEMY_DEAD"
+"		COND_LIGHT_DAMAGE"
+"		COND_HEAVY_DAMAGE"
+"		COND_HEAR_DANGER"
+"		COND_HEAR_MOVE_AWAY"
+"		COND_NEW_ENEMY"
+"		COND_SEE_ENEMY"
+"		COND_CAN_RANGE_ATTACK1"
+"		COND_CAN_RANGE_ATTACK2"
+)
+//=========================================================
+// SCHED_DALEK_ASSAULT
 //=========================================================
 DEFINE_SCHEDULE
 (
@@ -3773,8 +3933,8 @@ SCHED_DALEK_ESTABLISH_LINE_OF_FIRE,
 "	Interrupts "
 "		COND_NEW_ENEMY"
 "		COND_ENEMY_DEAD"
-//"		COND_CAN_RANGE_ATTACK1"
-//"		COND_CAN_RANGE_ATTACK2"
+"		COND_CAN_RANGE_ATTACK1"
+"		COND_CAN_RANGE_ATTACK2"
 "		COND_CAN_MELEE_ATTACK1"
 "		COND_CAN_MELEE_ATTACK2"
 "		COND_HEAR_DANGER"

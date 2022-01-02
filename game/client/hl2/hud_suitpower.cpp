@@ -99,10 +99,10 @@ void CHudSuitPower::OnThink( void )
 		g_pClientMode->GetViewportAnimationController()->StartAnimationSequence("SuitAuxPowerNotMax");
 	}
 
-	bool flashlightActive = pPlayer->IsFlashlightActive();
+	//bool flashlightActive = pPlayer->IsFlashlightActive();
 	//bool sprintActive = pPlayer->IsSprinting();
 	bool breatherActive = pPlayer->IsBreatherActive();
-	int activeDevices = (int)flashlightActive + /*(int)sprintActive +*/ (int)breatherActive;
+	int activeDevices = /*(int)flashlightActive + (int)sprintActive +*/ (int)breatherActive;
 
 	if (activeDevices != m_iActiveSuitDevices)
 	{

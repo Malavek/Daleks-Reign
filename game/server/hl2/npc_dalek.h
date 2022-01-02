@@ -65,13 +65,13 @@ public:
 	//virtual	Vector  FacingPosition(void);
 	virtual Vector	BodyTarget(const Vector &posSrc, bool bNoisy = true);
 
-	//virtual void	PrescheduleThink(void);
+	virtual void	PrescheduleThink(void);
 	virtual void	BuildScheduleTestBits(void);
 	virtual void	OnScheduleChange(void);
 
 	virtual int		RangeAttack1Conditions(float flDot, float flDist);	// Primary zap
 	//virtual int		RangeAttack2Conditions(float flDot, float flDist);	// Concussive zap (larger)
-	//virtual bool	InnateWeaponLOSCondition(const Vector &ownerPos, const Vector &targetPos, bool bSetConditions);
+	virtual bool	InnateWeaponLOSCondition(const Vector &ownerPos, const Vector &targetPos, bool bSetConditions);
 	virtual int		MeleeAttack1Conditions(float flDot, float flDist); // For kick/punch
 	virtual float	InnateRange1MinRange(void) { return 0.0f; }
 	virtual float	InnateRange1MaxRange(void) { return sk_dalek_zap_range.GetFloat() * 12; }
@@ -170,6 +170,7 @@ public:
 	int				SelectScheduleAttack();
 	bool			IsUsingTacticalVariant(int variant);
 	int				m_iTacticalVariant;
+	bool			IsRunningApproachEnemySchedule();
 
 private:
 
@@ -228,9 +229,11 @@ private:
 		//SCHED_DALEK_MELEE,
 		SCHED_DALEK_FLEE_FROM_BEST_SOUND,
 		SCHED_DALEK_ALERT_FACE_BESTSOUND,
+		SCHED_DALEK_PATROL,
 		SCHED_DALEK_ASSAULT,
 		SCHED_DALEK_ESTABLISH_LINE_OF_FIRE,
 		SCHED_DALEK_PRESS_ATTACK,
+		SCHED_DALEK_TURN180,
 
 	};
 
@@ -252,9 +255,10 @@ private:
 		TASK_DALEKFACE_PLAYER,
 		TASK_DALEKFACE_ENEMY,
 		TASK_DALEK_DISPEL_ANTLIONS,
-		TASK_DALEK_MOVESOUND
+		TASK_DALEK_MOVESOUND,
+		TASK_DALEK_TURN180,
 	};
-
+	
 	//=========================================================
 	// Dalek Conditions
 	//=========================================================
@@ -307,6 +311,8 @@ private:
 	bool			ShouldExplodeFromDamage(const CTakeDamageInfo &info);
 	bool			m_bExploding;
 	bool			m_bUseAggressiveBehavior;
+
+	bool			m_bDamageEnoughToExplode;
 
 	void			StartHandGlow(int beamType, int nHand);
 	void			EndHandGlow(int beamType = DALEK_BEAM_ALL);

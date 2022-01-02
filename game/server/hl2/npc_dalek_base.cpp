@@ -35,6 +35,8 @@
 #include "choreoscene.h"
 #include "choreoactor.h"
 #include "saverestore_utlvector.h"
+#include "ai_behavior.h"
+#include "ai_motor.h"
 
 ConVar ai_debug_readinessdalek("ai_debug_readinessdalek", "0" );
 ConVar ai_use_readinessdalek("ai_use_readinessdalek", "1" ); // 0 = off, 1 = on, 2 = on for player squad only

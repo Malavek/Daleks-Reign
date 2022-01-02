@@ -1,4 +1,4 @@
-﻿Build started 12/23/2021 4:11:19 PM.
+﻿Build started 1/1/2022 10:43:51 PM.
      1>Project "C:\sourcemodding\daleksreign\sp\src\game\client\client_episodic.vcxproj" on node 2 (Build target(s)).
      1>PreBuildEvent:
          if EXIST ..\..\..\game\mod_episodic\bin\.\client.dll for /f "delims=" %%A in ('attrib "..\..\..\game\mod_episodic\bin\.\client.dll"') do set valveTmpIsReadOnly="%%A"
@@ -8,6 +8,9 @@
          if ERRORLEVEL 1 exit /b 1
          
          :VCEnd
+       ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I.\hl2 /I.\hl2\elements /I..\..\game\shared\hl2 /I..\..\game\shared\episodic /I..\..\public /I.\ /I..\..\common /I..\..\public /I..\..\public\tier0 /I..\..\public\tier1 /I..\..\game\client\generated_proto_mod_episodic /I"..\..\thirdparty\protobuf-2.3.0\src" /I..\..\vgui2\include /I..\..\vgui2\controls /I..\..\game\shared /I.\game_controls /I..\..\thirdparty\sixensesdk\include /Zi /nologo /W4 /WX- /MP /O2 /Ob2 /Oi /Ot /Oy- /D VPC /D RAD_TELEMETRY_DISABLED /D WIN32 /D _WIN32 /D NDEBUG /D _WINDOWS /D _USRDLL /D _CRT_SECURE_NO_DEPRECATE /D _CRT_NONSTDC_NO_DEPRECATE /D _ALLOW_RUNTIME_LIBRARY_MISMATCH /D _ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH /D _ALLOW_MSC_VER_MISMATCH /D _USING_V110_SDK71_ /D _WINDLL /D _MBCS /D COMPILER_MSVC32 /D COMPILER_MSVC32 /D COMPILER_MSVC /D _DLL_EXT=.dll /D DLLNAME=client /D BINK_VIDEO /D AVI_VIDEO /D WMV_VIDEO /D DEV_BUILD /D FRAME_POINTER_OMISSION_DISABLED /D NO_STRING_T /D CLIENT_DLL /D VECTOR /D VERSION_SAFE_STEAM_API_INTERFACES /D PROTECTED_THINGS_ENABLE /D strncpy=use_Q_strncpy_instead /D _snprintf=use_Q_snprintf_instead /D ENABLE_CHROMEHTMLWINDOW /D fopen=dont_use_fopen /D HL2_CLIENT_DLL /D HL2_EPISODIC /D _EXTERNAL_DLL_EXT=.dll /D VPCGAMECAPS=VALVE /D PROJECTDIR=C:\sourcemodding\basemod\sp\src\game\client /D _DLL_EXT=.dll /D VPCGAME=valve /D SOURCE1=1 /GF /Gm- /MT /GS /Gy /arch:SSE /fp:fast /Zc:wchar_t /Zc:forScope /GR /Yu"cbase.h" /Fp".\Release_mod_episodic\/client.pch" /Fo".\Release_mod_episodic\/" /Fd".\Release_mod_episodic\/vc120.pdb" /Gd /TP /wd4316 /analyze- /FC /errorReport:prompt /Zm200 /d2Zi+ /Gw hl2\hud_suitpower.cpp
+         hud_suitpower.cpp
        Link:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:".\Release_mod_episodic\\client.dll" /INCREMENTAL:NO /NOLOGO /LIBPATH:..\..\lib\common\. /LIBPATH:..\..\lib\public\. shell32.lib user32.lib advapi32.lib gdi32.lib comdlg32.lib ole32.lib winmm.lib /NODEFAULTLIB:libc /NODEFAULTLIB:libcd /NODEFAULTLIB:libcmtd /MANIFEST:NO /DEBUG /PDB:".\Release_mod_episodic\/client.pdb" /SUBSYSTEM:WINDOWS,"5.01" /OPT:REF /OPT:NOICF /TLBID:1 /DYNAMICBASE:NO /NXCOMPAT /MACHINE:X86 /SAFESEH:NO  /ignore:4221 /DLL .\Release_mod_episodic\\pointeroverride.obj
          .\Release_mod_episodic\/c_dalek_charge_token.obj
@@ -557,4 +560,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:51.16
+Time Elapsed 00:00:24.71
