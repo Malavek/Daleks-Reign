@@ -169,7 +169,7 @@ public:
 	//---------------------------------
 
 protected:
-	//virtual bool	IsReadinessCapable();
+	virtual bool	IsReadinessCapable();
 	bool			IsReadinessLocked() { return gpGlobals->curtime < m_flReadinessLockedUntil; }
 	void			AddReadiness( float flAdd, bool bOverrideLock = false );
 	void			SubtractReadiness( float flAdd, bool bOverrideLock = false );
@@ -373,7 +373,7 @@ private:
 	CSimpleSimTimer		m_FakeOutMortarTimer;
 
 	// Derived classes should not use the expresser directly
-	virtual CAI_Expresser *GetExpresser()	{ return BaseClass::GetExpresser(); }
+	//virtual CAI_Expresser *GetExpresser()	{ return BaseClass::GetExpresser(); }
 	Vector					m_goalHeadDirection;
 	float					m_goalHeadInfluence;
 

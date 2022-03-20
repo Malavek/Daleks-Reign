@@ -22,6 +22,7 @@
 #define GAMEMOVEMENT_DUCK_TIME				1000.0f		// ms
 #define GAMEMOVEMENT_JUMP_TIME				510.0f		// ms approx - based on the 21 unit height jump
 #define GAMEMOVEMENT_JUMP_HEIGHT			21.0f		// units
+#define GAMEMOVEMENT_BOOST_JUMP_HEIGHT		80.0f		// units
 #define GAMEMOVEMENT_TIME_TO_UNDUCK			( TIME_TO_UNDUCK * 1000.0f )		// ms
 #define GAMEMOVEMENT_TIME_TO_UNDUCK_INV		( GAMEMOVEMENT_DUCK_TIME - GAMEMOVEMENT_TIME_TO_UNDUCK )
 
@@ -94,6 +95,9 @@ protected:
 	virtual void	WaterMove( void );
 
 	void			WaterJump( void );
+
+	// Boost jump bools -Malavek was here :>
+	//bool	FirstJump( void );
 
 	// Handles both ground friction and water friction
 	void			Friction( void );
@@ -188,6 +192,8 @@ protected:
 	// try nudging slightly on all axis to
 	// allow for the cut precision of the net coordinates
 	virtual int		CheckStuck( void );
+
+	//virtual int		FirstJump( void );
 	
 	// Check if the point is in water.
 	// Sets refWaterLevel and refWaterType appropriately.
@@ -237,6 +243,8 @@ protected:
 
 	// Checks to see if we should actually jump 
 	void			PlaySwimSound();
+
+	//virtual void	JumpBoostFX();
 
 	bool			IsDead( void ) const;
 

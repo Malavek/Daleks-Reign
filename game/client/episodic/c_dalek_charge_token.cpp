@@ -392,7 +392,7 @@ void C_DalekEffectDispel::NotifyShouldTransmit(ShouldTransmitState_t state)
 	// Turn on
 	if (state == SHOULDTRANSMIT_START)
 	{
-		m_hEffect = ParticleProp()->Create("larval_extract_glow", PATTACH_ABSORIGIN_FOLLOW);
+		m_hEffect = ParticleProp()->Create("vortigaunt_hand_glow", PATTACH_ABSORIGIN_FOLLOW);
 		m_hEffect->SetControlPointEntity(0, this);
 	}
 }
@@ -439,7 +439,7 @@ void C_DalekEffectDispel::ClientThink(void)
 //	
 //=============================================================================
 
-class C_DalekEffectLamp : public C_BaseEntity
+/*class C_DalekEffectLamp : public C_BaseEntity
 {
 	DECLARE_CLASS(C_DalekEffectLamp, C_BaseEntity);
 	DECLARE_CLIENTCLASS();
@@ -562,12 +562,7 @@ void C_DalekEffectLamp::ClientThink(void)
 		m_pDLight->origin = GetAbsOrigin();
 		m_pDLight->radius = DLIGHT_RADIUS;
 	}
-}
-
-
-
-
-
+}*/
 
 //-----------------------------------------------------------------------------
 // Purpose: 

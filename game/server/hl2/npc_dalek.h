@@ -81,11 +81,11 @@ public:
 
 
 	// vorts have a very long head/neck swing, so debounce heavily
-	virtual	float	GetHeadDebounce(void) { return 0.7; } // how much of previous head turn to use
+	virtual	float	GetHeadDebounce(void) { return 0.8; } // how much of previous head turn to use
 
 	//virtual void		Use(CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value);
-	virtual void		AlertSound(void);
-	Class_T			Classify(void);
+	//virtual void		AlertSound(void);
+	Class_T				Classify(void);
 	virtual void		HandleAnimEvent(animevent_t *pEvent);
 	virtual Activity	NPC_TranslateActivity(Activity eNewActivity);
 
@@ -101,6 +101,8 @@ public:
 	/*CBaseEntity *	GetCannonTarget();
 	bool			HasCannonTarget() const;
 	bool			IsCannonTarget(CBaseEntity *pTarget) const;*/
+
+	virtual bool	CreateVPhysics(void);
 
 	virtual void	UpdateOnRemove(void);
 	virtual void	Event_Killed(const CTakeDamageInfo &info);
@@ -171,6 +173,7 @@ public:
 	bool			IsUsingTacticalVariant(int variant);
 	int				m_iTacticalVariant;
 	bool			IsRunningApproachEnemySchedule();
+	int				m_iGunDamage;
 
 private:
 
@@ -208,10 +211,20 @@ private:
 
 	//void	CreateBeamBlast(const Vector &vecOrigin);
 
+	void	HeadlightGlowThink(void);
+	void	CreateHeadlightGlow(void);
+	void	ClearHeadlightGlow(void);
+	void	HeadlightSpeechGlow(void);
+	void	ValidToSmoke(void);
+	virtual void		NPCThink(void);
+
 protected:
 	void			SetKickDamage(int nDamage) { m_nKickDamage = nDamage; }
 	CAI_Sentence< CNPC_Dalek > *GetSentences() { return &m_Sentences; }
 	virtual Activity GetFlinchActivity(bool bHeavyDamage, bool bGesture);
+	CHandle<CSprite>		m_pHeadlightSpriteL;
+	CHandle<CSprite>		m_pHeadlightSpriteR;
+	//float	m_flNextNPCThink;
 
 private:
 	//=========================================================
@@ -233,7 +246,7 @@ private:
 		SCHED_DALEK_ASSAULT,
 		SCHED_DALEK_ESTABLISH_LINE_OF_FIRE,
 		SCHED_DALEK_PRESS_ATTACK,
-		SCHED_DALEK_TURN180,
+		//SCHED_DALEK_TURN180,
 
 	};
 
@@ -256,7 +269,7 @@ private:
 		TASK_DALEKFACE_ENEMY,
 		TASK_DALEK_DISPEL_ANTLIONS,
 		TASK_DALEK_MOVESOUND,
-		TASK_DALEK_TURN180,
+		//TASK_DALEK_TURN180,
 	};
 	
 	//=========================================================
@@ -271,6 +284,7 @@ private:
 		COND_DALEK_HEAL_VALID,				// All conditions satisfied	
 		COND_DALEK_DISPEL_ANTLIONS,		// Repulse all antlions around us
 		COND_DALEK_MELEE,		
+		COND_DALEK_NOT_SPEAKING,
 	};
 
 	int				m_nKickDamage;
@@ -289,14 +303,14 @@ private:
 	// ---------------
 	//  Glow
 	// ----------------
-	void			ClearHandGlow(void);
-	void			ClearLampGlow(void);
+	//void			ClearHandGlow(void);
+	//void			ClearLampGlow(void);
 	float			m_fGlowAge;
 	float			m_fGlowChangeTime;
 	bool			m_bGlowTurningOn;
 	int				m_nCurGlowIndex;
 
-	CHandle<CDalekEffectDispel>	m_hHandEffect[2];
+	///CHandle<CDalekEffectDispel>	m_hHandEffect[2];
 	//CHandle<CDalekEffectLamp>	m_hLampEffect[3];
 	CHandle<SmokeTrail> m_hSmoke;
 	CAI_FreePass m_PlayerFreePass;
@@ -314,11 +328,11 @@ private:
 
 	bool			m_bDamageEnoughToExplode;
 
-	void			StartHandGlow(int beamType, int nHand);
-	void			EndHandGlow(int beamType = DALEK_BEAM_ALL);
+	//void			StartHandGlow(int beamType, int nHand);
+	//void			EndHandGlow(int beamType = DALEK_BEAM_ALL);
 	//void			StartLampGlow(int beamType, int nHand);
 	//void			EndLampGlow(int beamType = DALEK_LAMP_ALL);
-	void			MaintainGlows(void);
+	//void			MaintainGlows(void);
 
 	// ----------------
 	//  Healing

@@ -128,7 +128,7 @@ int ACT_DALEK_MELEE;
 int ACT_DALEK_DISPEL;
 //int ACT_DALEK_HEAL; // Heal gesture
 //int ACT_DALEK_ANTLION_THROW;
-int ACT_DALEK_TURN180;
+//int ACT_DALEK_TURN180;
 
 //=========================================================
 // Monster's Anim Events Go Here
@@ -181,7 +181,7 @@ BEGIN_DATADESC(CNPC_Dalek)
 
 //DEFINE_FIELD(m_eHealState, FIELD_INTEGER),
 //DEFINE_FIELD(m_flNextHealTokenTime, FIELD_TIME),
-DEFINE_ARRAY(m_hHandEffect, FIELD_EHANDLE, 2),
+//DEFINE_ARRAY(m_hHandEffect, FIELD_EHANDLE, 2),
 //DEFINE_ARRAY(m_hLampEffect, FIELD_EHANDLE, 3),
 //DEFINE_FIELD(m_flNextHealTime, FIELD_TIME),
 //DEFINE_FIELD(m_bPlayerRequestedHeal, FIELD_BOOLEAN),
@@ -193,6 +193,9 @@ DEFINE_FIELD(m_fGlowAge, FIELD_FLOAT),
 DEFINE_FIELD(m_fGlowChangeTime, FIELD_TIME),
 DEFINE_FIELD(m_bGlowTurningOn, FIELD_BOOLEAN),
 DEFINE_FIELD(m_nCurGlowIndex, FIELD_INTEGER),
+//DEFINE_FIELD(m_flNextNPCThink, FIELD_TIME),
+DEFINE_FIELD(m_pHeadlightSpriteL, FIELD_EHANDLE),
+DEFINE_FIELD(m_pHeadlightSpriteR, FIELD_EHANDLE),
 //DEFINE_FIELD(m_flNextHealTime, FIELD_TIME),
 DEFINE_FIELD(m_flPainTime, FIELD_TIME),
 DEFINE_FIELD(m_nextLineFireTime, FIELD_TIME),
@@ -326,9 +329,9 @@ void CNPC_Dalek::StartTask(const Task_t *pTask)
 		// We override this to add our innate weapon
 		if (m_AnnounceAttackTimer.Expired())
 		{
-			if (SpeakIfAllowed(TLK_ATTACKING, "attacking_with_weapon:zap"))
+			if (SpeakIfAllowed(TLK_ATTACKING))
 			{
-				m_AnnounceAttackTimer.Set(10, 30);
+				m_AnnounceAttackTimer.Set(3, 7);
 			}
 		}
 
@@ -336,11 +339,11 @@ void CNPC_Dalek::StartTask(const Task_t *pTask)
 		break;
 	}
 
-	case TASK_DALEK_TURN180:
-	{
-		SetActivity((Activity)ACT_DALEK_TURN180);
-		break;
-	}
+	//case TASK_DALEK_TURN180:
+	//{
+	//	SetActivity((Activity)ACT_DALEK_TURN180);
+	//	break;
+	//}
 
 	// Sets our target to the entity that we cached earlier.
 	/*case TASK_DALEK_GET_HEAL_TARGET:
@@ -510,14 +513,14 @@ void CNPC_Dalek::RunTask(const Task_t *pTask)
 		break;
 	}
 
-	case TASK_DALEK_TURN180:
-	{
-		if (IsActivityFinished())
-		{
-			TaskComplete();
-		}
-		break;
-	}
+	//case TASK_DALEK_TURN180:
+	//{
+	//	if (IsActivityFinished())
+	//	{
+	//		TaskComplete();
+	//	}
+	//	break;
+	//}
 
 	/*case TASK_DALEK_EXTRACT_WARMUP:
 	{
@@ -598,9 +601,9 @@ void CNPC_Dalek::Explode(void)
 	AngularImpulse	angVelocity = RandomAngularImpulse(-150, 150);
 
 	// Break into pieces
-	breakablepropparams_t params(EyePosition(), GetAbsAngles(), velocity, angVelocity);
+	breakablepropparams_t params(GetAbsOrigin(), GetAbsAngles(), velocity, angVelocity);
 	params.impactEnergyScale = 1.0f;
-	params.defBurstScale = 600.0f;
+	params.defBurstScale = 250.0f;
 	params.defCollisionGroup = COLLISION_GROUP_NPC;
 	PropBreakableCreateAll(GetModelIndex(), NULL, params, this, -1, true, true);
 
@@ -611,8 +614,9 @@ void CNPC_Dalek::Explode(void)
 	SetNextThink(gpGlobals->curtime + 0.1f);
 
 	Vector vecExplode;
-	GetAttachment("attach_head", vecExplode);
+	GetAttachment("attach_body", vecExplode);
 	ExplosionCreate(vecExplode, QAngle(0, 0, 1), this, 100, 128, false);
+	DispatchParticleEffect("explosion_turret_break", vecExplode, QAngle(0, 0, 0));
 
 	AddEffects(EF_NODRAW);
 
@@ -665,13 +669,13 @@ int CNPC_Dalek::MeleeAttack1Conditions(float flDot, float flDist)
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CNPC_Dalek::AlertSound(void)
+/*void CNPC_Dalek::AlertSound(void)
 {
 	if (GetEnemy() != NULL)
 	{
 		m_Sentences.Speak("DALEK_EXTERMINATE");
 	}
-}
+}*/
 
 //-----------------------------------------------------------------------------
 // Purpose: Allows each sequence to have a different turn rate associated with it.
@@ -679,19 +683,28 @@ void CNPC_Dalek::AlertSound(void)
 //-----------------------------------------------------------------------------
 float CNPC_Dalek::MaxYawSpeed(void)
 {
+	if ((GetActivity() == ACT_180_LEFT) || (GetActivity() == ACT_180_RIGHT))
+		return 0;
+
+	//if (GetActivity() == ACT_DALEK_TURN180)
+	//	return 0;
+
 	switch (GetActivity())
 	{
 	case ACT_IDLE:
-		return 35;
+		return 15;
 		break;
 	case ACT_WALK:
-		return 35;
+		return 15;
 		break;
 	case ACT_RUN:
-		return 45;
+		return 15;
 		break;
+	//case ACT_DALEK_TURN180:
+	//	return 0;
+	//	break; 
 	default:
-		return 35;
+		return 15;
 		break;
 	}
 }
@@ -915,21 +928,21 @@ void CNPC_Dalek::HandleAnimEvent(animevent_t *pEvent)
 	}*/
 
 	// Start our hurt glows (choreo driven)
-	if (pEvent->event == AE_DALEK_START_HURT_GLOW)
+	/*if (pEvent->event == AE_DALEK_START_HURT_GLOW)
 	{
 		StartHandGlow(DALEK_BEAM_DISPEL, atoi(pEvent->options));
 		return;
-	}
+	}*/
 
 	// Stop our hurt glows (choreo driven)
-	if (pEvent->event == AE_DALEK_STOP_HURT_GLOW)
+	/*if (pEvent->event == AE_DALEK_STOP_HURT_GLOW)
 	{
 		EndHandGlow();
 		return;
-	}
+	}*/
 
 	// Start our dispel effect
-	if (pEvent->event == AE_DALEK_START_DISPEL)
+	/*if (pEvent->event == AE_DALEK_START_DISPEL)
 	{
 		StartHandGlow(DALEK_BEAM_DISPEL, HAND_LEFT);
 		StartHandGlow(DALEK_BEAM_DISPEL, HAND_RIGHT);
@@ -945,7 +958,7 @@ void CNPC_Dalek::HandleAnimEvent(animevent_t *pEvent)
 			EmitSound(filter, entindex(), ep);
 		}
 		return;
-	}
+	}*/
 
 	// Start our lamp effect
 	/*if (pEvent->event == AE_DALEK_LAMP)
@@ -1103,7 +1116,7 @@ void CNPC_Dalek::HandleAnimEvent(animevent_t *pEvent)
 			ZapBeam(HAND_RIGHT);
 		}*/
 
-		EndHandGlow();
+		//EndHandGlow();
 
 		EmitSound("npc_dalek.gunfire");
 		m_bStopLoopingSounds = true;
@@ -1172,7 +1185,8 @@ void CNPC_Dalek::HandleAnimEvent(animevent_t *pEvent)
 		}*/
 
 		// Stagger the next time we can attack
-		m_flNextAttack = gpGlobals->curtime + random->RandomFloat(2.0f, 3.0f);
+		m_flNextAttack = gpGlobals->curtime + random->RandomFloat(1.0f, 2.5f); //originally 2.0f, 3.0f
+		//DevMsg("Main gun attack went through\n");
 		return;
 	}
 
@@ -1326,10 +1340,10 @@ Activity CNPC_Dalek::NPC_TranslateActivity(Activity eNewActivity)
 			return ACT_IDLE_STIMULATED;
 	}
 
-	if ((eNewActivity == ACT_180_LEFT) || (eNewActivity == ACT_180_RIGHT))
-	{
-		SetSchedule(SCHED_DALEK_TURN180);
-	}
+	//if ((eNewActivity == ACT_180_LEFT) || (eNewActivity == ACT_180_RIGHT))
+	//{
+	//	SetSchedule(ACT_DALEK_TURN180);
+	//}
 	
 
 	if (eNewActivity == ACT_MELEE_ATTACK1)
@@ -1367,7 +1381,7 @@ void CNPC_Dalek::OnChangeActivity(Activity eNewActivity)
 void CNPC_Dalek::UpdateOnRemove(void)
 {
 	ClearBeams();
-	ClearHandGlow();
+	//ClearHandGlow();
 	StopSound("npc_dalek.move");
 
 	// Chain at end to mimic destructor unwind order
@@ -1380,7 +1394,7 @@ void CNPC_Dalek::UpdateOnRemove(void)
 void CNPC_Dalek::Event_Killed(const CTakeDamageInfo &info)
 {
 	ClearBeams();
-	ClearHandGlow();
+	//ClearHandGlow();
 	StopSmoking();
 	StopSound("npc_dalek.move");
 	EmitSound("npc_dalek.death");
@@ -1418,8 +1432,13 @@ void CNPC_Dalek::Spawn(void)
 	SetHullType(HULL_HUMAN);
 	SetHullSizeNormal();
 
+	SetMoveType(MOVETYPE_VPHYSICS);
+	SetNavType(NAV_FLY);
+	CapabilitiesAdd(bits_CAP_MOVE_FLY);
+
 	m_bloodColor = DONT_BLEED;
 	m_iHealth = sk_dalek_health.GetFloat();
+	m_iGunDamage = sk_dalek_dmg_zap.GetFloat();
 	SetViewOffset(Vector(0, 0, 74));// position of the eyes relative to monster's origin.
 	SetKickDamage(sk_dalek_dmg_melee.GetFloat());
 
@@ -1497,6 +1516,18 @@ void CNPC_Dalek::RagdollDeathEffect(CRagdollProp *pRagdoll, float flDuration)
 			}
 		}
 	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Output : Returns true on success, false on failure.
+//-----------------------------------------------------------------------------
+bool CNPC_Dalek::CreateVPhysics(void)
+{
+	//if (HasSpawnFlags(SF_MANHACK_CARRIED))
+	//	return false;
+
+	return BaseClass::CreateVPhysics();
 }
 
 //-----------------------------------------------------------------------------
@@ -1619,14 +1650,14 @@ void CNPC_Dalek::StartSmoking(void)
 
 	if (m_hSmoke)
 	{
-		m_hSmoke->m_SpawnRate = 32;
+		m_hSmoke->m_SpawnRate = 24;
 		m_hSmoke->m_ParticleLifetime = 3.0;
-		m_hSmoke->m_StartSize = 16;
-		m_hSmoke->m_EndSize = 64;
-		m_hSmoke->m_SpawnRadius = 20;
+		m_hSmoke->m_StartSize = 8;
+		m_hSmoke->m_EndSize = 32;
+		m_hSmoke->m_SpawnRadius = 16;
 		m_hSmoke->m_MinSpeed = 8;
 		m_hSmoke->m_MaxSpeed = 64;
-		m_hSmoke->m_Opacity = 0.3;
+		m_hSmoke->m_Opacity = 0.2;
 
 		m_hSmoke->m_StartColor.Init(0.25f, 0.25f, 0.25f);
 		m_hSmoke->m_EndColor.Init(0, 0, 0);
@@ -1656,7 +1687,7 @@ void CNPC_Dalek::Precache()
 
 	m_nLightningSprite = PrecacheModel("sprites/lgtning.vmt");
 	PrecacheModel("sprites/physring1.vmt");
-	m_nLampSprite = PrecacheModel("sprites/blueflare1.vmt");
+	//m_nLampSprite = PrecacheModel("sprites/blueflare1.vmt");
 	PrecacheModel("sprites/blueflare1.vmt");
 
 	// HACK: Only precache this for EP2 because reslists cannot be rebuilt - 08/22/07 - jdw
@@ -1697,6 +1728,7 @@ void CNPC_Dalek::Precache()
 	PrecacheParticleSystem("Weapon_Combine_Ion_Cannon_Beam");
 	PrecacheParticleSystem("vortigaunt_beam_charge");
 	PrecacheParticleSystem("vortigaunt_hand_glow");
+	PrecacheParticleSystem("explosion_turret_break");
 
 	PrecacheMaterial("sprites/light_glow02_add");
 	PrecacheMaterial("sprites/blueflare1");
@@ -2231,7 +2263,7 @@ bool CNPC_Dalek::IsRunningApproachEnemySchedule()
 //-----------------------------------------------------------------------------
 void CNPC_Dalek::ClearSchedule(const char *szReason)
 {
-	MaintainGlows();
+	//MaintainGlows();
 
 	BaseClass::ClearSchedule(szReason);
 }
@@ -2248,7 +2280,7 @@ void CNPC_Dalek::OnScheduleChange(void)
 	//	return;
 
 	// If we're changing sequences, always clear
-	EndHandGlow(DALEK_BEAM_ALL);
+	//EndHandGlow(DALEK_BEAM_ALL);
 	m_fGlowChangeTime = gpGlobals->curtime + 0.1f;	// No more glows for this amount of time!
 }
 
@@ -2516,15 +2548,14 @@ inline bool CNPC_Dalek::InAttackSequence(void)
 //-----------------------------------------------------------------------------
 // Purpose: Watch our beams and make sure we don't leave them on mistakenly
 //-----------------------------------------------------------------------------
-void CNPC_Dalek::MaintainGlows(void)
+/*void CNPC_Dalek::MaintainGlows(void)
 {
 	// Verify that if we're not in an attack gesture, that we're not doing an attack glow
 	if (InAttackSequence() == false)
 	{
 		EndHandGlow(DALEK_BEAM_ALL);
 	}
-}
-
+}*/
 
 //-----------------------------------------------------------------------------
 // Purpose: Squelch looping sounds and glows after a restore.
@@ -2658,7 +2689,7 @@ void CNPC_Dalek::BuildScheduleTestBits(void)
 //------------------------------------------------------------------------------
 // Purpose : Put glowing sprites on hands
 //------------------------------------------------------------------------------
-void CNPC_Dalek::StartHandGlow(int beamType, int nHand)
+/*void CNPC_Dalek::StartHandGlow(int beamType, int nHand)
 {
 	// We need this because there's a rare case where a scene can interrupt and turn off our hand glows, but are then
 	// turned back on in the same frame due to how animations are applied and anim events are executed after the AI frame.
@@ -2695,12 +2726,12 @@ void CNPC_Dalek::StartHandGlow(int beamType, int nHand)
 		Assert(0);
 		break;
 	}
-}
+}*/
 
 //------------------------------------------------------------------------------
 // Purpose: Fade glow from hands.
 //------------------------------------------------------------------------------
-void CNPC_Dalek::EndHandGlow(int beamType )
+/*void CNPC_Dalek::EndHandGlow(int beamType )
 {
 	if (m_hHandEffect[0])
 	{
@@ -2722,7 +2753,7 @@ void CNPC_Dalek::EndHandGlow(int beamType )
 		// Stop our smaller beams as well
 		ClearBeams();
 	}
-}
+}*/
 
 extern int ACT_ANTLION_ZAP_FLIP;
 
@@ -2778,9 +2809,6 @@ void CNPC_Dalek::ZapBeam(int nHand)
 	Vector forward;
 	GetVectors(&forward, NULL, NULL);
 
-	//Vector vecSrc = GetAbsOrigin() + GetViewOffset();
-	//Vector vecAim = GetShootEnemyDir(vecSrc, false);	// We want a clear shot to their core
-
 	Vector vecSrc;
 	Vector vecAim;
 	GetAttachment("attach_barrel", vecSrc, &vecAim);
@@ -2809,29 +2837,7 @@ void CNPC_Dalek::ZapBeam(int nHand)
 
 	trace_t tr;
 
-	/*if (m_bExtractingBugbait == true)
-	{
-		CRagdollProp *pTest = dynamic_cast< CRagdollProp *>(GetTarget());
-
-		if (pTest)
-		{
-			ragdoll_t *m_ragdoll = pTest->GetRagdoll();
-
-			if (m_ragdoll)
-			{
-				Vector vOrigin;
-				m_ragdoll->list[0].pObject->GetPosition(&vOrigin, 0);
-
-				AI_TraceLine(vecSrc, vOrigin, MASK_SHOT, this, COLLISION_GROUP_NONE, &tr);
-			}
-
-			CRagdollBoogie::Create(pTest, 200, gpGlobals->curtime, 1.0f);
-		}
-	}
-	else
-	{*/
-		AI_TraceLine(vecSrc, vecSrc + (vecAim * InnateRange1MaxRange()), MASK_SHOT, this, COLLISION_GROUP_NONE, &tr);
-	//}
+	AI_TraceLine(vecSrc, vecSrc + (vecAim * InnateRange1MaxRange()), MASK_SHOT, this, COLLISION_GROUP_NONE, &tr);
 
 	if (g_debug_dalek_aim.GetBool())
 	{
@@ -2847,6 +2853,7 @@ void CNPC_Dalek::ZapBeam(int nHand)
 	MessageEnd();
 
 	CBaseEntity *pEntity = tr.m_pEnt;
+
 	if (pEntity != NULL && m_takedamage)
 	{
 		if (g_debug_dalek_aim.GetBool())
@@ -2854,33 +2861,25 @@ void CNPC_Dalek::ZapBeam(int nHand)
 			NDebugOverlay::Box(tr.endpos, -Vector(2, 2, 2), Vector(2, 2, 2), 255, 0, 0, 8, 10.0f);
 		}
 
-		CTakeDamageInfo dmgInfo(this, this, sk_dalek_dmg_zap.GetFloat(), DMG_SHOCK);
-		dmgInfo.SetDamagePosition(tr.endpos);
-		VectorNormalize(vecAim);// not a unit vec yet
-		// hit like a 5kg object flying 100 ft/s
-		dmgInfo.SetDamageForce(5 * 100 * 12 * vecAim);
 
-		// Our zaps do special things to antlions
-		/*if (FClassnameIs(pEntity, "npc_antlion"))
+		if (pEntity->IsPlayer())
 		{
-			// Make a worker flip instead of explode
-			if (IsAntlionWorker(pEntity))
-			{
-				CNPC_Antlion *pAntlion = static_cast<CNPC_Antlion *>(pEntity);
-				pAntlion->Flip();
-			}
-			else
-			{
-				// Always gib the antlion hit!
-				dmgInfo.ScaleDamage(4.0f);
-			}
-
-			// Look in a ring and flip other antlions nearby
-			DispelAntlions(tr.endpos, 200.0f, false);
-		}*/
-
-		// Send the damage to the recipient
-		pEntity->DispatchTraceAttack(dmgInfo, vecAim, &tr);
+			CTakeDamageInfo dmgInfo(this, this, m_iGunDamage / 3, DMG_SHOCK);
+			dmgInfo.SetDamagePosition(tr.endpos);
+			VectorNormalize(vecAim);// not a unit vec yet
+			// hit like a 5kg object flying 100 ft/s
+			dmgInfo.SetDamageForce(5 * 100 * 12 * vecAim);
+			pEntity->DispatchTraceAttack(dmgInfo, vecAim, &tr);
+		}
+		else
+		{
+			CTakeDamageInfo dmgInfo(this, this, sk_dalek_dmg_zap.GetFloat(), DMG_SHOCK);
+			dmgInfo.SetDamagePosition(tr.endpos);
+			VectorNormalize(vecAim);// not a unit vec yet
+			// hit like a 5kg object flying 100 ft/s
+			dmgInfo.SetDamageForce(5 * 100 * 12 * vecAim);
+			pEntity->DispatchTraceAttack(dmgInfo, vecAim, &tr);
+		}	
 	}
 
 	// Create a cover for the end of the beam
@@ -2890,7 +2889,7 @@ void CNPC_Dalek::ZapBeam(int nHand)
 //------------------------------------------------------------------------------
 // Purpose: Clear glow from hands immediately
 //------------------------------------------------------------------------------
-void CNPC_Dalek::ClearHandGlow(void)
+/*void CNPC_Dalek::ClearHandGlow(void)
 {
 	if (m_hHandEffect[0] != NULL)
 	{
@@ -2905,7 +2904,7 @@ void CNPC_Dalek::ClearHandGlow(void)
 	}
 
 	m_fGlowAge = 0;
-}
+}*/
 
 //------------------------------------------------------------------------------
 // Purpose: remove all beams
@@ -3377,7 +3376,7 @@ int CNPC_Dalek::OnTakeDamage_Alive(const CTakeDamageInfo &info)
 {
 	CTakeDamageInfo subInfo = info;
 
-	if (!(info.GetDamageType() & (DMG_BLAST | DMG_SHOCK)))
+	if (!(info.GetDamageType() & (DMG_BLAST | DMG_SHOCK | DMG_VEHICLE | DMG_CRUSH)))
 		return 0;
 
 	if (info.GetDamageType() == DMG_GENERIC)
@@ -3393,19 +3392,19 @@ int CNPC_Dalek::OnTakeDamage_Alive(const CTakeDamageInfo &info)
 	}
 
 	//int healthIncrement = 5 - ( m_iHealth / ( m_iMaxHealth / 5 ) );
-	if ((info.GetDamageType() & DMG_BLAST || DMG_SHOCK) && info.GetMaxDamage() > 50)
-	{
-		Vector headPos = BodyTarget(info.GetDamagePosition(), false);
+	//if ((info.GetDamageType() & DMG_BLAST) || (info.GetDamageType() & DMG_SHOCK))
+	//{
+		//Vector headPos = BodyTarget(info.GetDamagePosition(), false);
 
-		float dist = CalcDistanceToAABB(WorldAlignMins(), WorldAlignMaxs(), info.GetDamagePosition() - headPos);
+		//float dist = CalcDistanceToAABB(WorldAlignMins(), WorldAlignMaxs(), info.GetDamagePosition() - headPos);
 
-		if (!IsSmoking() && m_iHealth <= sk_dalek_health.GetFloat() / 2)
-		{
-			StartSmoking();
-		}
+		//if (!IsSmoking() && m_iHealth <= sk_dalek_health.GetFloat() / 2)
+		//{
+		//	StartSmoking();
+		//}
 
 		// close enough to do damage?
-		if (dist < 200)
+		/*if (dist < 200)
 		{
 			bool bPlayer = info.GetAttacker()->IsPlayer();
 			if (bPlayer)
@@ -3419,9 +3418,9 @@ int CNPC_Dalek::OnTakeDamage_Alive(const CTakeDamageInfo &info)
 				AddFacingTarget(info.GetAttacker(), info.GetAttacker()->GetAbsOrigin(), 0.5, 2.0);
 
 			PainSound(info);
-		}
+		}*/
 
-	}
+	//}
 
 	//npcs always explode daleks on kill, players only explode them if the last hit is above a certain damage threshold 
 	//TO-DO: currently it only ragdolls if the weapon itself does damage under 20, and doesn't matter if the last hit is under 20 damage if the weapon can do more. -Malavek
@@ -3440,6 +3439,16 @@ int CNPC_Dalek::OnTakeDamage_Alive(const CTakeDamageInfo &info)
 	}
 
 	return BaseClass::OnTakeDamage_Alive(info);
+}
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CNPC_Dalek::ValidToSmoke(void)
+{
+	if (!IsSmoking() && m_iHealth <= sk_dalek_health.GetFloat() / 3)
+	{
+		StartSmoking();
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -3533,7 +3542,7 @@ void CNPC_Dalek::OnStartScene(void)
 	StopSound("npc_dalek.move");
 	// Watch our hand state
 
-	EndHandGlow(DALEK_BEAM_ALL);
+	//EndHandGlow(DALEK_BEAM_ALL);
 	m_fGlowChangeTime = gpGlobals->curtime + 0.1f;	// No more glows for this amount of time!
 
 	BaseClass::OnStartScene();
@@ -3623,7 +3632,7 @@ DECLARE_TASK(TASK_DALEK_EXTRACT_COOLDOWN)
 DECLARE_TASK(TASK_DALEK_GET_HEAL_TARGET)
 //DECLARE_TASK(TASK_DALEK_MELEE)
 DECLARE_TASK(TASK_DALEK_MOVESOUND)
-DECLARE_TASK(TASK_DALEK_TURN180)
+//DECLARE_TASK(TASK_DALEK_TURN180)
 
 DECLARE_ACTIVITY(ACT_DALEK_AIM)
 //DECLARE_ACTIVITY(ACT_DALEK_START_HEAL)
@@ -3635,7 +3644,7 @@ DECLARE_ACTIVITY(ACT_DALEK_MELEE)
 //DECLARE_ACTIVITY(ACT_DALEK_HEAL)
 DECLARE_ACTIVITY(ACT_DALEK_DISPEL)
 //DECLARE_ACTIVITY(ACT_DALEK_ANTLION_THROW)
-DECLARE_ACTIVITY(ACT_DALEK_TURN180)
+//DECLARE_ACTIVITY(ACT_DALEK_TURN180)
 
 DECLARE_CONDITION(COND_DALEK_CAN_HEAL)
 DECLARE_CONDITION(COND_DALEK_HEAL_TARGET_TOO_FAR)
@@ -3643,6 +3652,7 @@ DECLARE_CONDITION(COND_DALEK_HEAL_TARGET_BLOCKED)
 DECLARE_CONDITION(COND_DALEK_HEAL_TARGET_BEHIND_US)
 DECLARE_CONDITION(COND_DALEK_HEAL_VALID)
 DECLARE_CONDITION(COND_DALEK_MELEE)
+DECLARE_CONDITION(COND_DALEK_NOT_SPEAKING)
 
 //DECLARE_SQUADSLOT(SQUAD_SLOT_HEAL_PLAYER)
 
@@ -3692,7 +3702,7 @@ SCHED_DALEK_RANGE_ATTACK,
 //=========================================================
 // > SCHED_DALEK_TURN180
 //=========================================================
-DEFINE_SCHEDULE
+/*DEFINE_SCHEDULE
 (
 SCHED_DALEK_TURN180,
 
@@ -3704,7 +3714,7 @@ SCHED_DALEK_TURN180,
 ""
 "	Interrupts"
 "		COND_NO_CUSTOM_INTERRUPTS"
-);
+);*/
 
 //=========================================================
 // > SCHED_DALEK_HEAL
@@ -4347,3 +4357,84 @@ void CDalekEffectDispel::FadeAndDie(void)
 	SetThink(&CBaseEntity::SUB_Remove);
 	SetNextThink(gpGlobals->curtime + 2.0f);
 }*/
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+//void CNPC_Dalek::HeadlightGlowThink(void)
+//{
+//	NPCThink();
+//	m_flNextNPCThink = gpGlobals->curtime + 0.1;
+//}
+
+//-----------------------------------------------------------------------------
+// Purpose: Make Dalek think because he stupid poo poo dumb fuck
+//-----------------------------------------------------------------------------
+void CNPC_Dalek::NPCThink(void)
+{
+	BaseClass::NPCThink();
+	HeadlightSpeechGlow();
+	ValidToSmoke();
+	//SetNextThink(gpGlobals->curtime + 0.1f);
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CNPC_Dalek::CreateHeadlightGlow(void)
+{
+	//Vector vecHeadlight_L;
+	//Vector vecHeadlight_R;
+	//GetAttachment("attach_lampL", vecHeadlight_L);
+	//GetAttachment("attach_lampR", vecHeadlight_R);
+
+	if (m_pHeadlightSpriteL == NULL)
+	{
+		m_pHeadlightSpriteL = CSprite::SpriteCreate("sprites/blueflare1.vmt", GetLocalOrigin(), false);
+		m_pHeadlightSpriteL->SetAttachment(this, LookupAttachment("attach_lampL"));
+		m_pHeadlightSpriteL->FollowEntity(this);
+		m_pHeadlightSpriteL->SetTransparency(kRenderTransAddFrameBlend, 255, 240, 200, 135, kRenderFxNone);
+		m_pHeadlightSpriteL->SetBrightness(255);
+		m_pHeadlightSpriteL->SetScale(0.25f);
+	}
+	if (m_pHeadlightSpriteR == NULL)
+	{
+		m_pHeadlightSpriteR = CSprite::SpriteCreate("sprites/blueflare1.vmt", GetLocalOrigin(), false);
+		m_pHeadlightSpriteR->SetAttachment(this, LookupAttachment("attach_lampR"));
+		m_pHeadlightSpriteR->FollowEntity(this);
+		m_pHeadlightSpriteR->SetTransparency(kRenderTransAddFrameBlend, 255, 240, 200, 135, kRenderFxNone);
+		m_pHeadlightSpriteR->SetBrightness(255);
+		m_pHeadlightSpriteR->SetScale(0.25f);
+	}
+
+}
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CNPC_Dalek::ClearHeadlightGlow(void)
+{
+	if (m_pHeadlightSpriteL != NULL)
+	{
+		m_pHeadlightSpriteL->FadeAndDie(0.25f);
+	}
+	if (m_pHeadlightSpriteR != NULL)
+	{
+		m_pHeadlightSpriteR->FadeAndDie(0.25f);
+	}
+}
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CNPC_Dalek::HeadlightSpeechGlow(void)
+{
+	if (GetExpresser()->IsSpeaking())
+	{
+		//DevMsg("Headlight ON output went through\n");
+		CreateHeadlightGlow();
+	}
+	else if (!GetExpresser()->IsSpeaking())
+	{
+		//DevMsg("Headlight OFF output went through\n");
+		ClearHeadlightGlow();
+	}
+}

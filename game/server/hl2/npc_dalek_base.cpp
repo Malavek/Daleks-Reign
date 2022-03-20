@@ -238,18 +238,18 @@ void CNPC_Dalek_Base::Spawn()
 		CapabilitiesAdd( bits_CAP_USE_SHOT_REGULATOR );
 	}
 	//CapabilitiesAdd( bits_CAP_NO_HIT_PLAYER | bits_CAP_NO_HIT_SQUADMATES | bits_CAP_FRIENDLY_DMG_IMMUNE );
-	CapabilitiesAdd( bits_CAP_MOVE_GROUND );
-	SetMoveType( MOVETYPE_STEP );
+	//CapabilitiesAdd( bits_CAP_MOVE_GROUND );
+	//SetMoveType( MOVETYPE_STEP );
 
 	m_HackedGunPos = Vector( 0, 0, 55 );
 	
 	SetAimTarget(NULL);
-	//m_bReadinessCapable = IsReadinessCapable();
+	m_bReadinessCapable = IsReadinessCapable();
 	SetReadinessValue( 0.0f );
 	SetReadinessSensitivity( random->RandomFloat( 0.7, 1.3 ) );
 	m_flReadinessLockedUntil = 0.0f;
 
-	m_AnnounceAttackTimer.Set( 10, 30 );
+	m_AnnounceAttackTimer.Set( 3, 7 );
 
 #ifdef HL2_EPISODIC
 	// We strip this flag because it's been made obsolete by the StartScripting behavior
@@ -1469,6 +1469,19 @@ void CNPC_Dalek_Base::StartTask( const Task_t *pTask )
 		break;
 
 	case TASK_ANNOUNCE_ATTACK:
+	{
+		if (m_AnnounceAttackTimer.Expired())
+		{
+			if (SpeakIfAllowed(TLK_ATTACKING))
+			{
+				m_AnnounceAttackTimer.Set(3, 7);
+			}
+		}
+
+		BaseClass::StartTask(pTask);
+		break;
+	}
+	/*case TASK_ANNOUNCE_ATTACK:
 		{
 			if ( GetActiveWeapon() && m_AnnounceAttackTimer.Expired() )
 			{
@@ -1480,7 +1493,7 @@ void CNPC_Dalek_Base::StartTask( const Task_t *pTask )
 
 			BaseClass::StartTask( pTask );
 			break;
-		}
+		}*/
 
 	case TASK_PC_WAITOUT_MORTAR:
 		if ( HasCondition( COND_NO_HEAR_DANGER ) )
@@ -1960,12 +1973,12 @@ void CNPC_Dalek_Base::ModifyOrAppendCriteria( AI_CriteriaSet& set )
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-/*bool CNPC_Dalek_Base::IsReadinessCapable()
+bool CNPC_Dalek_Base::IsReadinessCapable()
 {
 	if ( GlobalEntity_GetState("gordon_precriminal") == GLOBAL_ON )
 		return false;
 
-#ifndef HL2_EPISODIC
+/*#ifndef HL2_EPISODIC
 	// Allow episodic companions to use readiness even if unarmed. This allows for the panicked 
 	// citizens in ep1_c17_05 (sjb)
 	if( !GetActiveWeapon() )
@@ -1976,10 +1989,10 @@ void CNPC_Dalek_Base::ModifyOrAppendCriteria( AI_CriteriaSet& set )
 		return false;
 
 	if( GetActiveWeapon() && FClassnameIs( GetActiveWeapon(), "weapon_rpg" ) )
-		return false;
+		return false;*/
 
 	return true;
-}*/
+}
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -3974,7 +3987,7 @@ bool CNPC_Dalek_Base::OverrideMove( float flInterval )
 bool CNPC_Dalek_Base::MovementCost( int moveType, const Vector &vecStart, const Vector &vecEnd, float *pCost )
 {
 	bool bResult = BaseClass::MovementCost( moveType, vecStart, vecEnd, pCost );
-	if ( moveType == bits_CAP_MOVE_GROUND )
+	if ( moveType == bits_CAP_MOVE_FLY )
 	{
 		if ( IsCurSchedule( SCHED_TAKE_COVER_FROM_BEST_SOUND ) )
 		{

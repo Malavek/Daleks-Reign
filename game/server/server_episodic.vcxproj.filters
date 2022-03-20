@@ -1721,9 +1721,6 @@
     <ClInclude Include="hl2\vehicle_crane.h">
       <Filter>Source Files\HL2 DLL</Filter>
     </ClInclude>
-    <ClInclude Include="episodic\vehicle_jeep_episodic.h">
-      <Filter>Source Files\HL2 DLL</Filter>
-    </ClInclude>
     <ClInclude Include="hl2\weapon_alyxgun.h">
       <Filter>Source Files\HL2 DLL</Filter>
     </ClInclude>
@@ -1794,6 +1791,9 @@
       <Filter>Source Files\HL2 DLL</Filter>
     </ClInclude>
     <ClInclude Include="hl2\npc_dalek_base.h">
+      <Filter>Source Files\HL2 DLL</Filter>
+    </ClInclude>
+    <ClInclude Include="episodic\vehicle_jeep_episodic.h">
       <Filter>Source Files\HL2 DLL</Filter>
     </ClInclude>
   </ItemGroup>
@@ -3268,9 +3268,6 @@
     <ClCompile Include="hl2\vehicle_jeep.cpp">
       <Filter>Source Files\HL2 DLL</Filter>
     </ClCompile>
-    <ClCompile Include="episodic\vehicle_jeep_episodic.cpp">
-      <Filter>Source Files\HL2 DLL</Filter>
-    </ClCompile>
     <ClCompile Include="hl2\vehicle_prisoner_pod.cpp">
       <Filter>Source Files\HL2 DLL</Filter>
     </ClCompile>
@@ -3524,6 +3521,9 @@
       <Filter>Source Files\HL2 DLL</Filter>
     </ClCompile>
     <ClCompile Include="hl2\npc_dalek_base.cpp">
+      <Filter>Source Files\HL2 DLL</Filter>
+    </ClCompile>
+    <ClCompile Include="episodic\vehicle_jeep_episodic.cpp">
       <Filter>Source Files\HL2 DLL</Filter>
     </ClCompile>
   </ItemGroup>

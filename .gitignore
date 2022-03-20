@@ -1,0 +1,8 @@
+
+*.opensdf
+*.obj
+*.log
+*.pdb
+*.pch
+*.lib
+*.exp

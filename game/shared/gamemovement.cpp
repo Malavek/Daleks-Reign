@@ -14,6 +14,8 @@
 #include "decals.h"
 #include "coordsize.h"
 #include "rumble_shared.h"
+#include "particle_parse.h"
+//#include "particle_system.h"
 
 #if defined(HL2_DLL) || defined(HL2_CLIENT_DLL)
 	#include "hl_movedata.h"
@@ -63,6 +65,11 @@ ConVar debug_latch_reset_onduck( "debug_latch_reset_onduck", "1", FCVAR_CHEAT );
 
 // [MD] I'll remove this eventually. For now, I want the ability to A/B the optimizations.
 bool g_bMovementOptimizations = true;
+
+// Boost jump bool ( 0 = on ground, 1 = first jump, 2 = second jump) -Malavek was here :>
+int FirstJump = 0;
+
+bool g_bBoostFromFall = false; 
 
 // Roughly how often we want to update the info about the ground surface we're on.
 // We don't need to do this very often.
@@ -2390,13 +2397,25 @@ bool CGameMovement::CheckJumpButton( void )
 
 		return false;
 	}
-
+	//
 	// No more effect
- 	if (player->GetGroundEntity() == NULL)
+	if ((player->GetGroundEntity() == NULL) && (FirstJump != 1))
 	{
 		mv->m_nOldButtons |= IN_JUMP;
-		return false;		// in air, so no effect
+		return false;		// in air and already did boost jump, so no effect
 	}
+
+	if ((player->GetGroundEntity() == NULL) && (!(player->IsSuitEquipped())))
+	{
+		mv->m_nOldButtons |= IN_JUMP;
+		return false;		// You can't boost jump without a suit
+	}
+
+	/*if (FirstJump >= 2)
+	{
+		mv->m_nOldButtons |= IN_JUMP;
+		return false;		// already did a boost jump.
+	}*/
 
 	// Don't allow jumping when the player is in a stasis field.
 #ifndef HL2_EPISODIC
@@ -2418,19 +2437,31 @@ bool CGameMovement::CheckJumpButton( void )
 
 	// In the air now.
     SetGroundEntity( NULL );
-	
-	player->PlayStepSound( (Vector &)mv->GetAbsOrigin(), player->m_pSurfaceData, 1.0, true );
-	
+	if (FirstJump != 1)
+	{
+		player->PlayStepSound((Vector &)mv->GetAbsOrigin(), player->m_pSurfaceData, 1.0, true);
+	}
+	else
+	{
+		MoveHelper()->StartSound(mv->GetAbsOrigin(), "CyberSFX.JumpThrusters");
+	}
 	MoveHelper()->PlayerSetAnimation( PLAYER_JUMP );
 
 	float flGroundFactor = 1.0f;
 	if (player->m_pSurfaceData)
 	{
-		flGroundFactor = player->m_pSurfaceData->game.jumpFactor; 
+		if (g_bBoostFromFall == true)
+		{
+			flGroundFactor = player->m_pSurfaceData->game.jumpFactor * 1.25;
+		}
+		else
+		{
+			flGroundFactor = player->m_pSurfaceData->game.jumpFactor;
+		}
 	}
 
 	float flMul;
-	if ( g_bMovementOptimizations )
+	/*if ( g_bMovementOptimizations )
 	{
 #if defined(HL2_DLL) || defined(HL2_CLIENT_DLL)
 		Assert( GetCurrentGravity() == 600.0f );
@@ -2442,8 +2473,39 @@ bool CGameMovement::CheckJumpButton( void )
 
 	}
 	else
+	{*/
+
+	if (player->IsSuitEquipped())
 	{
-		flMul = sqrt(2 * GetCurrentGravity() * GAMEMOVEMENT_JUMP_HEIGHT);
+		if (FirstJump <= 0) //first jump handling
+		{
+			{
+				flMul = sqrt(2 * GetCurrentGravity() * GAMEMOVEMENT_JUMP_HEIGHT);
+				FirstJump = 1;
+			}
+		}
+		else if (FirstJump == 1) //second jump handling
+		{
+			{
+				flMul = sqrt(2 * GetCurrentGravity() * GAMEMOVEMENT_BOOST_JUMP_HEIGHT);
+				FirstJump = 2;
+
+				CBroadcastRecipientFilter filter;
+				te->DynamicLight(filter, 0.0, &player->GetAbsOrigin(), 255, 180, 100, 0, 300, 0.3, 1);
+
+				//DispatchParticleEffect("Weapon_Combine_Ion_Cannon_Explosion_k", &player->GetAbsOrigin(), QAngle(90, 0, 0));
+				//DispatchParticleEffect("dust2_splinter_stalactite", &player->GetAbsOrigin(), QAngle(0, 0, 0));
+				//player->RumbleEffect(RUMBLE_AR2_ALT_FIRE, 0, RUMBLE_FLAGS_NONE);
+			}
+		}
+	}
+	else
+	{
+
+		{
+			flMul = sqrt(2 * GetCurrentGravity() * GAMEMOVEMENT_JUMP_HEIGHT);
+			FirstJump = 1;
+		}
 	}
 
 	// Acclerate upward
@@ -3607,6 +3669,18 @@ void CGameMovement::SetGroundEntity( trace_t *pm )
  		vecBaseVelocity += oldGround->GetAbsVelocity();
 		vecBaseVelocity.z = oldGround->GetAbsVelocity().z;
 	}
+	else if (!oldGround && !newGround)
+	{
+		if (FirstJump != 2)
+		{
+			if (FirstJump <= 0)
+			{
+				FirstJump = 1;
+				g_bBoostFromFall = true;
+			}
+		}
+	}
+
 
 	player->SetBaseVelocity( vecBaseVelocity );
 	player->SetGroundEntity( newGround );
@@ -3617,6 +3691,8 @@ void CGameMovement::SetGroundEntity( trace_t *pm )
 	{
 		CategorizeGroundSurface( *pm );
 
+		FirstJump = 0;
+		g_bBoostFromFall = false;
 		// Then we are not in water jump sequence
 		player->m_flWaterJumpTime = 0;
 
